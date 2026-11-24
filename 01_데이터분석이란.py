@@ -267,3 +267,5 @@ for i in range(len(header)):
         row[i] for row in rows
     )  # 그 열의 값만 모읍니다. set 이라 중복은 한 번만 남아요
     print(f"{header[i]:<6} 종류 {len(kinds):>3}가지 {roles[header[i]]}")
+
+# ======= 11/24
