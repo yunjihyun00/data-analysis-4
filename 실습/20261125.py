@@ -456,8 +456,19 @@ print("=" * 60)
 print("[실습 6] 두 열이 같이 움직이나")
 
 # TODO ① (1존 온도, CP값) 짝을 만들어 온도 큰 순으로 세우고, 쌍 개수와 빠진 줄을 찍으세요
+pairs = [(float(row[1]), float(row[3])) for row in rows if row[3] != ""]
+pairs = sorted(pairs, reverse=True)
+print(f"쌍 {len(pairs)}개 / 빠진 줄 {len(rows) - len(pairs)}")
+
 # TODO ② 상위 5줄·하위 5줄과 각각의 CP값 평균을 찍으세요
+hot = pairs[:5]
+cold = pairs[-5:]
+hot_cp = round(sum(p[1] for p in hot) / len(hot), 3)
+cold_cp = round(sum(p[1] for p in cold) / len(cold), 3)
+print(f"상위 5줄의 CP값 평균 {hot_cp} · 하위 5줄의 CP값 평균 {cold_cp}")
+
 # TODO ③ 두 평균의 차이를 찍으세요
+print("차이", round((hot_cp - cold_cp), 3))
 
 
 # =====================================================================
@@ -517,9 +528,42 @@ print("=" * 60)
 print("[실습 7] 빈 칸이 섞인 열에서 평균 내기")
 
 # TODO ① 그냥 평균을 내 보고, 터지는 오류를 try / except 로 받아 찍으세요
+try:
+    op = [float(row[4]) for row in rows]
+    m = sum(op) / len(op)
+    print(m)
+except ValueError as e:
+    print(type(e).__name__, "-", e)
+
+
 # TODO ② 빈 칸을 건너뛰고 평균을 내고, 개수와 평균을 같이 찍으세요
+skip = []
+for row in rows:
+    if row[4] != "":
+        skip.append(float(row[4]))
+
+m_skip = sum(skip) / len(skip)
+print(f"{len(skip)} 개로 평균 {round(m_skip, 2)}")
+
+
 # TODO ③ 빈 칸을 0.0 으로 채우고 평균을 내고, 개수와 평균을 같이 찍으세요
+fill = []
+for row in rows:
+    if row[4] == "":
+        fill.append(0.0)
+    else:
+        fill.append(float(row[4]))
+
+m_fill = sum(fill) / len(fill)
+print(f"{len(fill)} 개로 평균 {round(m_fill, 2)}")
+
+
 # TODO ④ 두 평균의 차이와 검산 두 줄을 찍으세요
+blank = len(rows) - len(skip)
+diff = round(m_skip - m_fill, 2)
+print(
+    f"차이 {diff} / 검산 1 {len(skip)} + {blank} = {len(rows)} / 검산2 {round(m_skip, 2)} x {blank} ÷ {len(rows)} = {round(m_skip * blank / len(rows), 2)}"
+)
 
 
 # =====================================================================
@@ -557,6 +601,15 @@ print("=" * 60)
 print("[실습 8] 세 줄 보고서")
 
 # TODO ①~⑤ 다섯 줄을 f-string 으로 찍으세요
+print(
+    f"1) 소입로온도1존 {len(z1)}건의 평균은 {round(avg, 2)}, 흔들림은 {round(spread, 2)} 입니다."
+)
+print(
+    f"2) result 이상 {s_abnormal["개수"]}건의 온도 평균은 {s_abnormal["평균"]}, 정상 {s_normal["개수"]}건은 {s_normal["평균"]}입니다."
+)
+print(f"3) 단 이상 표본이 {s_abnormal["개수"]}건으로 적어 평균의 안정성은 낮습니다.")
+print(f"4) OP값은 빈 칸 {blank}개를 건너뛰고 {len(skip)}건으로 평균을 냈습니다.")
+print("5) OP값이 무엇인지는 확인하지 못했습니다.")
 
 print("=" * 60)
 print("실습 8개 끝. 수고하셨습니다.")
