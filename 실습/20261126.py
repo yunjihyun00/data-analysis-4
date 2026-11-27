@@ -260,7 +260,8 @@ print("weld[150:200].shape ->", weld[150:200].shape)
 # =====================================================================
 # [문제] 통전전류(tc = weld[:, 3])는 5975 같은 큰 숫자라 "얼마나 큰지" 감이 안 옵니다.
 #        숫자 하나를 배열 전체에서 빼고 나누는 ★브로드캐스팅으로 자를 바꿔 봅니다.
-#     ① 0 ~ 1 사이로 옮기세요 (최소-최대 정규화). 앞 5개(둘째 자리), 최소·최대·개수를 찍으세요
+#     ① 0 ~ 1 사이로
+#       옮기세요 (최소-최대 정규화). 앞 5개(둘째 자리), 최소·최대·개수를 찍으세요
 #     ② 평균 0, 표준편차 1 로 옮기세요 (표준화) → z 로 두세요.
 #        앞 5개(둘째 자리)와 z 의 평균·표준편차(둘째 자리)를 찍으세요
 #     ③ 01단원의 '흔들림'(평균에서 떨어진 거리의 평균)을 ★for 없이 한 줄로 내고,
@@ -299,8 +300,21 @@ print("=" * 60)
 print("[실습 4] 브로드캐스팅으로 자 하나에 올리기")
 
 # TODO ① 통전전류를 0~1 로 옮기고 앞 5개·최소·최대·개수를 찍으세요
+tc = weld[:, 3]
+tc_mm = (tc - tc.min()) / (tc.max() - tc.min())
+print(
+    f"원래 {tc[:5]} → {np.round(tc_mm[:5], 2)} \n     최소 {tc_mm.min()} / 최대 {tc_mm.max()} / 개수 {tc_mm.size}"
+)
+
 # TODO ② 표준화한 z 를 만들고 앞 5개와 z 의 평균·표준편차를 찍으세요
+z = (tc - tc.mean()) / tc.std()
+print(
+    f"앞 5개 {np.round(z[:5], 2)} / z의 평균 {round(z.mean(), 2)} / z의 표준편차 {round(z.std(), 2)}"
+)
+
 # TODO ③ 흔들림을 한 줄로 내고 표준편차와 나란히 찍으세요
+shake = np.abs(tc - tc.mean()).mean()
+print(f"흔들림 {round(shake, 2)} / 표준편차 {round(tc.std(), 1)}")
 
 
 # =====================================================================
@@ -354,8 +368,29 @@ print("=" * 60)
 print("[실습 5] 라벨을 보지 않고 수상한 줄 찾기")
 
 # TODO ① k = 2, 3 으로 건수·줄 번호·불량/정상 건수·잡은 비율을 찍으세요
+bad = lab == 0
+for k in (2, 3):
+    far = np.abs(z) > k
+    idx = np.where(far)[0]
+
+    n_far = far.sum()
+    n_far_bad = (far & bad).sum()
+    n_far_ok = (far & ~bad).sum()
+    rate = n_far_bad / bad.sum() * 100
+
+    print(
+        f"{k} 초과 {n_far}건 · {idx}번 · 불량 {n_far_bad}건 / 정상 {n_far_ok}건 · {round(rate, 1)}%"
+    )
+
 # TODO ② k = 2 로 잡힌 줄을 통째로 꺼내 앞 3줄을 찍으세요
+far = np.abs(z) > 2
+print(weld[far][:3])
+
 # TODO ③ 잡힌 줄과 나머지 줄의 가압력 평균, 줄 수 검산을 찍으세요
+wp = weld[:, 4]
+print(
+    f"잡힌 줄 가압력 평균 {round(wp[far].mean(), 1)} / 나머지 {round(wp[~far].mean(), 1)} / 검산 {far.sum()} + {(~far).sum()} = {far.sum() + (~far).sum()}"
+)
 
 
 # =====================================================================
@@ -411,9 +446,26 @@ print("=" * 60)
 print("[실습 6] 평균과 중앙값, 표준편차 두 개")
 
 # TODO ① 다섯 열의 평균·중앙값·표준편차·최소·최대를 한 줄씩 찍으세요
+for i in range(len(cols)):
+    c = weld[:, i]
+    print(
+        f"{cols[i]:<6} 평균 {c.mean():>9.2f}  중앙값 {np.median(c):>9.2f} "
+        f"표준편차 {c.std():>8.2f} 최소 {c.min():>8.2f} 최대 ({c.max():>8.2f})"
+    )
+
 # TODO ② 가압력의 평균·중앙값, 작은 쪽·큰 쪽 5개, 평균보다 큰·작은 줄 수를 찍으세요
+wp_sorted = np.sort(wp)
+
+print(f"평균 {wp.mean():.2f} / 중앙값 {np.median(wp)}")
+print(f"작은 쪽 {wp_sorted[:5]} · 큰 쪽 {wp_sorted[-5:]}")
+print(f"평균보다 큰 줄 {(wp > wp.mean()).sum()}건 / 작은 줄 {(wp < wp.mean()).sum()}건")
+
 # TODO ③ 가압력 표준편차를 두 가지로 찍으세요
+print(f"{wp.std():.4f} (분모 162) / {wp.std(ddof=1):.4f} (분모 161)")
+
 # TODO ④ 정상 줄만 골라 가압력 평균과 중앙값을 찍으세요
+wp_ok = wp[~bad]
+print(f"정상 줄만: 평균 {wp_ok.mean():.2f} / 중앙값 {np.median(wp_ok)}")
 
 
 # =====================================================================
@@ -469,10 +521,35 @@ print("=" * 60)
 print("[실습 7] axis 로 방향 정하기")
 
 # TODO ① axis=0, axis=1 평균의 개수와 값을 찍으세요
-# TODO ② 첫 줄로 손 검산을 찍으세요
-# TODO ③ 정상·불량 줄의 열별 평균과 차이를 한 줄씩 찍으세요
-# TODO ④ bad 를 18 x 9 로 접어 axis=1, axis=0 으로 각각 세고 합을 찍으세요
+down = weld.mean(axis=0)  # 열마다 평균 : 5개
+across = weld.mean(axis=1)  # 줄마다 평균 : 162개
 
+print(f"axis=0 -> {len(down)}개 · axis=1 -> {len(across)}개")
+print(" · ".join(f"{cols[i]} {down[i]:.2f}" for i in range(len(cols))))
+print("axis=1 앞 3개", across[:3])
+
+# TODO ② 첫 줄로 손 검산을 찍으세요
+hand = weld[0].sum() / 5
+print(
+    f"첫 줄 {weld[0]} 합 / 5 = {hand} <- axis=1 첫 값과 같은가: {np.isclose(hand, across[0])}"
+)
+
+# TODO ③ 정상·불량 줄의 열별 평균과 차이를 한 줄씩 찍으세요
+good_m = weld[~bad].mean(axis=0)
+bad_m = weld[bad].mean(axis=0)
+
+for i in range(len(cols)):
+    print(
+        f"{cols[i]:<6} 정상 {good_m[i]:>9.2f} 불량 {bad_m[i]:>9.2f} 차이 {good_m[i] - bad_m[i]:>9.2f}"
+    )
+
+# TODO ④ bad 를 18 x 9 로 접어 axis=1, axis=0 으로 각각 세고 합을 찍으세요
+bad_fold = bad.reshape(18, 9)
+per_row = bad_fold.sum(axis=1)  # 9줄 묶음마다 (18)
+per_col = bad_fold.sum(axis=0)  # 묶음 안 자리마다 (9)
+
+print(f"묶음마다 (axis=1): {per_row} / 합 {per_row.sum()}")
+print(f"바꿔 쓰면 (axis=0): {per_col} / 합 {per_col.sum()}")
 
 # =====================================================================
 # 실습 8 — 다섯 줄 보고서
@@ -512,6 +589,25 @@ print("=" * 60)
 print("[실습 8] 다섯 줄 보고서")
 
 # TODO ①~⑤ 다섯 줄을 f-string 으로 찍으세요
+far2 = np.abs(z) > 2
+far3 = np.abs(z) > 3
+
+print(
+    f"1) 용접 {len(lab)}건 중 판정 0(불량)은 {bad.sum()}건({round(bad.mean() * 100, 1)}%)입니다."
+)
+print(
+    f"2) 불량 {bad.sum()}건의 다섯 열 평균은 정상 {bad.sum()}건보다 모두 낮습니다 "
+    f"({cols[3]} {round(bad_m[3])}) 대 {round(good_m[3], 2)}"
+)
+print(
+    f"3) 통전전류 표준화 값 2 기준으로 {far2.sum()}건을 잡았고 전부 불량이었습니다. "
+    f"3 기준이면 {far3.sum()}건만 잡힙니다."
+)
+print(
+    f"4) 가압력 평균 {round(wp.mean(), 2)} 은 중앙값 {np.median(wp)} 보다 낮습니다. "
+    f"불량 {bad.sum()}건이 평균을 끌어내렸습니다."
+)
+print(f"5) 단위, 판정 기준, 파일 순서가 시간 순서인지는 확인하지 못했습니다.")
 
 print("=" * 60)
 print("실습 8개 끝. 수고하셨습니다.")
